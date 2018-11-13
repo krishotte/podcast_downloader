@@ -1,0 +1,63 @@
+#:kivy 1.10.0
+<MainV>:
+    orientation: 'vertical'
+    Button:
+        text: 'refresh'
+        size_hint_y: 0.07
+    Button:
+        text: 'download'
+        size_hint_y: 0.07
+        on_release: app.rvidg.download()
+    #Item1:
+<SelLabel>:
+    idx: 0
+    selected: False
+    text: str(self.idx)
+    size_hint_x: 0.1
+    canvas.before:
+        Color:
+            rgba: (.0, 0.3, .9, .3) if self.selected else (0, 0, 0, 1)
+        Rectangle:
+            pos: self.pos
+            size: self.size
+<Item1>:
+    orientation: 'horizontal'
+    size_hint_y: None
+    size: (24, 48)
+    text: 'abc'
+    act: False
+    idx: 0
+    Label:
+        text: root.text
+        size_hint_x: 0.8
+    #CheckBox:
+    #    size_hint_x: 0.1
+        #active: root.act
+        #on_state: root.on_touch_down2() 
+    Label:
+        text: str(root.idx)
+        size_hint_x: 0.1
+        id: slabel
+        canvas.before:
+            Color:
+                rgba: (.0, 0.3, .9, .3) if root.selected else (0, 0, 0, 1)
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+#<MyRecycleBoxLayout>:
+
+<RV>:
+    size_hint_y: 0.83
+    viewclass: 'Item1' #'Label'
+    #RecycleBoxLayout:
+    MyRecycleBoxLayout:
+        size_hint_y: 0.86
+        default_size: None, dp(36)
+        default_size_hint: 1, None
+        size_hint_y: None
+        height: self.minimum_height
+        orientation: 'vertical'
+        multiselect: True
+        touch_multiselect: True
+    
