@@ -1,13 +1,17 @@
 #:kivy 1.10.0
 <MainV>:
     orientation: 'vertical'
-    Button:
-        text: 'refresh'
+    BoxLayout:
+        orientation: 'horizontal'
         size_hint_y: 0.07
-    Button:
-        text: 'download'
-        size_hint_y: 0.07
-        on_release: app.rvidg.download()
+        Button:
+            text: 'refresh'
+            #size_hint_y: 0.07
+            on_release: app.rvidg.refresh()
+        Button:
+            text: 'download'
+            #size_hint_y: 0.07
+            on_release: app.rvidg.download()
     #Item1:
 <SelLabel>:
     idx: 0
@@ -29,6 +33,7 @@
     idx: 0
     Label:
         text: root.text
+        font_size: '12sp'
         size_hint_x: 0.8
     #CheckBox:
     #    size_hint_x: 0.1
@@ -36,6 +41,7 @@
         #on_state: root.on_touch_down2() 
     Label:
         text: str(root.idx)
+        font_size: '12sp'
         size_hint_x: 0.1
         id: slabel
         canvas.before:
