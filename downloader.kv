@@ -43,17 +43,31 @@
     #    size_hint_x: 0.1
         #active: root.act
         #on_state: root.on_touch_down2() 
-    Label:
-        text: str(root.idx)
-        font_size: '12sp'
+    RelativeLayout:
         size_hint_x: 0.08
         id: slabel
-        canvas.before:
-            Color:
-                rgba: (0.09, 0.53, 0.71, 1) if root.selected else (0, 0, 0, 1)
-            Rectangle:
-                pos: self.pos
-                size: self.size
+        Label:
+            text: str(root.idx)
+            font_size: '12sp'
+            #size_hint_x: 0.08
+            #id: slabel
+            canvas.before:
+                Color:
+                    rgba: (0.09, 0.53, 0.71, 1) if root.selected else (0, 0, 0, 1)
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+        Label:
+            id: indicator
+            size_hint: (None, None)
+            size: (dp(6), dp(6))
+            pos_hint: {'right':0.95, 'top':0.85}
+            canvas.before:
+                Color:
+                    rgba: (0, 1, 0, 0.5) if root.saved else (0, 0, 0, 0)
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
 
 #<MyRecycleBoxLayout>:
 

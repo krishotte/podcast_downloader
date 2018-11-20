@@ -38,14 +38,15 @@ class _session():
 
 class downloader():
     'gets response in background, then saves data in foreground, wrapped in class'
-    def __init__(self): #, toget):
+    def __init__(self, data_dir): #, toget):
         self.done = 0
         self.results_queue = []
         i=0
         self.toget_ = []
         self.items_ = []
+        self.data_dir = data_dir
         '''
-        for each in toget:
+        for each in self.toget:
             each['id'] = i
             se = FuturesSession()
             se.index = i
@@ -94,6 +95,18 @@ class downloader():
         self.items_ = itemsout
         print('items w filenames: ', self.items_)
         return itemsout
+    def check_saved(self):
+        'checks which files are already saved'
+        itemsout = []
+        for each in self.items_:
+            saved = path.isfile(path.join(self.data_dir, each['filename'] + '.mp3'))
+            each['saved'] = saved
+            each['selectable'] = not saved
+            if saved:
+                print('file ', each['filename'], ' is saved')
+            itemsout.append(each)
+        print('items check saved: ', itemsout)
+        self.items_ = itemsout
     def create_toget(self, toget_list):
         self.toget_ = []
         idx = 0
@@ -135,12 +148,14 @@ def test1():
     dl.toget_ = dl.guess_filenames(items_)
     #dl.getdata()
 def test2():
-    dl2 = downloader()
+    dl2 = downloader('C:\\Users\\pkrssak\\AppData\\Roaming\\podcast_downloader\\data')
     dl2.get_items()
     dl2.guess_filenames()
-    lst = [1, 2, 4]
-    dl2.create_toget(lst)
-    dl2.getdata('C:\\Users\\pkrssak\\AppData\\Roaming\\podcast_downloader\\data')
+    dl2.check_saved()
+    #lst = [1, 2, 4]
+    #dl2.create_toget(lst)
+    #dl2.getdata('C:\\Users\\pkrssak\\AppData\\Roaming\\podcast_downloader\\data')
+
 #test1()
 #test2()
 #print('...done...')

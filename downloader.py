@@ -15,6 +15,7 @@ from kivy.uix.label import Label
 import libsyn
 from m_file import ini2
 from kivy.core.window import Window
+from kivy.uix.relativelayout import RelativeLayout
 
 dir_path = path.dirname(path.realpath(__file__))
 file_path = path.join(dir_path, 'downloader.kv')
@@ -27,7 +28,6 @@ class RV(RecycleView):
     def __init__(self, data_dir, **kwargs):
         super().__init__() #super(RV, self).__init__(**kwargs)
         self.data = []
-        self.refresh()
         self.data_dir = data_dir
         print('datadir: ', self.data_dir)
         inifile = ini2()
@@ -35,32 +35,41 @@ class RV(RecycleView):
         if not self.config:
             print('dictionary is empty')
             self.config['datadir'] = path.join(self.data_dir, 'data')
-            #inifile.write(path.join(self.data_dir, 'downloader.json'), self.config)
+            inifile.write(path.join(self.data_dir, 'downloader.json'), self.config)
         #print(dict1)
         print('directory exists: ', path.isdir(self.config['datadir']))
         if not path.isdir(self.config['datadir']):
             mkdir(self.config['datadir'])
             print('directory created')
+        self.refresh()
     def download(self):
         'downloads selected podcast files'
         print('RV selected nodes: ', self.snodes)
         self.dl2.create_toget(self.snodes)
         self.dl2.getdata(self.config['datadir'])
+        self.refresh()
     def refresh(self):
         'refreshes podcast list'
-        self.dl2 = libsyn.downloader()
+        self.dl2 = libsyn.downloader(self.config['datadir'])
         self.dl2.get_items()
         self.dl2.guess_filenames()
+        self.dl2.check_saved()
         items = self.dl2.items_ #libsyn.get_items()
         items_ = []
         for i in range(len(items)):
             a = {}
             a['text'] = items[i]['title']
             a['idx'] = str(i)
+            a['saved'] = items[i]['saved'] #True if i%2 == 0 else False
+            a['selectable'] = items[i]['selectable'] #False if i%2 == 0 else True
+            a['selected'] = False
             items_.append(a)
         self.data = items_
         print('self.data: ', self.data)
-
+        self.snodes = []
+        print('RV children: ', self.children)
+        self.children[0].selected_nodes = []
+        
 class MainV(BoxLayout):
     pass
 class Item1(RecycleDataViewBehavior, BoxLayout):
@@ -70,6 +79,7 @@ class Item1(RecycleDataViewBehavior, BoxLayout):
     index = idx #None
     selected = BooleanProperty(False)
     selectable = BooleanProperty(True)
+    saved = BooleanProperty(False)
     
     def refresh_view_attrs(self, rv, index, data):
         ''' Catch and handle the view changes '''
@@ -84,12 +94,15 @@ class Item1(RecycleDataViewBehavior, BoxLayout):
         if super(Item1, self).on_touch_down(touch):
             return True
         if self.ids.slabel.collide_point(*touch.pos) and self.selectable:
-            #print('node selected: ', self.index)
+            print('node selected: ', self.index)
             return self.parent.select_with_touch(self.index, touch)
+        else:
+            #print('touch: ', self.ids.slabel.collide_point(*touch.pos))
+            pass
     def apply_selection(self, rv, index, is_selected):
         ''' Respond to the selection of items in the view. '''
         self.selected = is_selected
-        #print('rv data index: ', rv.data[index])
+        print('rv data index: ', rv.data[index])
         #if is_selected:
             #print("selection changed to {0}".format(rv.data[index]))
         #else:
@@ -108,7 +121,7 @@ class Podcast_Downloader(App):
         print('user datadir: ', self.user_data_dir)
         self.mainvidg = MainV()
         self.rvidg = RV(self.user_data_dir)
-        self.mrbl = MyRecycleBoxLayout()
+        #self.mrbl = MyRecycleBoxLayout()
         #self.rvidg.add_widget(self.mrbl)
         self.mainvidg.add_widget(self.rvidg)
         Window.size = (400, 800)
