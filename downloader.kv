@@ -13,17 +13,6 @@
             #size_hint_y: 0.07
             on_release: app.rvidg.download()
     #Item1:
-<SelLabel>:
-    idx: 0
-    selected: False
-    text: str(self.idx)
-    size_hint_x: 0.1
-    canvas.before:
-        Color:
-            rgba: (0.3, 0.3, 0.8, 1) if self.selected else (0, 0, 0, 1)
-        Rectangle:
-            pos: self.pos
-            size: self.size
 <Item1>:
     orientation: 'horizontal'
     size_hint_y: None
@@ -68,9 +57,7 @@
                 Rectangle:
                     pos: self.pos
                     size: self.size
-
 #<MyRecycleBoxLayout>:
-
 <RV>:
     size_hint_y: 0.83
     viewclass: 'Item1' #'Label'

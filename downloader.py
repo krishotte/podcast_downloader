@@ -9,7 +9,6 @@ from kivy.uix.recycleview.views import RecycleDataViewBehavior
 from kivy.uix.behaviors import FocusBehavior
 from kivy.uix.recycleview.layout import LayoutSelectionBehavior
 from kivy.uix.recycleboxlayout import RecycleBoxLayout
-#from kivy.uix.recycleview.datamodel import RecycleDataModel
 #from kivy.factory import Factory
 from kivy.uix.label import Label
 import libsyn
@@ -50,6 +49,8 @@ class RV(RecycleView):
         self.refresh()
     def refresh(self):
         'refreshes podcast list'
+        self.snodes = []
+        self.children[0].selected_nodes = []
         self.dl2 = libsyn.downloader(self.config['datadir'])
         self.dl2.get_items()
         self.dl2.guess_filenames()
@@ -65,10 +66,9 @@ class RV(RecycleView):
             a['selected'] = False
             items_.append(a)
         self.data = items_
-        print('self.data: ', self.data)
-        self.snodes = []
-        print('RV children: ', self.children)
-        self.children[0].selected_nodes = []
+        for each in self.data:
+            print('self.data: ', each)
+        self.refresh_from_data()        #need to be called to properly refresh view and clear selections
         
 class MainV(BoxLayout):
     pass
@@ -80,7 +80,6 @@ class Item1(RecycleDataViewBehavior, BoxLayout):
     selected = BooleanProperty(False)
     selectable = BooleanProperty(True)
     saved = BooleanProperty(False)
-    
     def refresh_view_attrs(self, rv, index, data):
         ''' Catch and handle the view changes '''
         self.index = index
@@ -102,7 +101,7 @@ class Item1(RecycleDataViewBehavior, BoxLayout):
     def apply_selection(self, rv, index, is_selected):
         ''' Respond to the selection of items in the view. '''
         self.selected = is_selected
-        print('rv data index: ', rv.data[index])
+        #print('rv data index: ', rv.data[index])
         #if is_selected:
             #print("selection changed to {0}".format(rv.data[index]))
         #else:
@@ -121,8 +120,6 @@ class Podcast_Downloader(App):
         print('user datadir: ', self.user_data_dir)
         self.mainvidg = MainV()
         self.rvidg = RV(self.user_data_dir)
-        #self.mrbl = MyRecycleBoxLayout()
-        #self.rvidg.add_widget(self.mrbl)
         self.mainvidg.add_widget(self.rvidg)
         Window.size = (400, 800)
         return self.mainvidg

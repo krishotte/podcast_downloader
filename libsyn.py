@@ -6,36 +6,6 @@ import time
 import re
 from os import path
 
-def get_items():
-    'gets list of available podcast for download'
-    url = 'http://angriesttrainer.libsyn.com/rss'
-    result = session_requests.get(url)
-    bs4_obj = BeautifulSoup(result.content, 'html.parser')
-    print(bs4_obj.prettify())
-
-    b = bs4_obj.find_all('item')
-    items_ = []
-    for i in b:
-        try:
-            print('title: ', i.find('title'))
-            print('url: ', i.find('enclosure')['url'])
-            item_ = {
-                'title': i.find('title').get_text(),
-                'url': i.find('enclosure')['url']
-            }
-            items_.append(item_)
-        except:
-            pass
-
-    print('items lenght: ', len(items_))
-    print('items: ', items_)
-    return items_
-
-class _session():
-    def __init__(self, index):
-        s = FuturesSession()
-        s.index = index
-
 class downloader():
     'gets response in background, then saves data in foreground, wrapped in class'
     def __init__(self, data_dir): #, toget):
@@ -75,7 +45,7 @@ class downloader():
             except:
                 pass
         print('items lenght: ', len(items_))
-        print('items: ', items_)
+        #print('items: ', items_)
         self.items_ = items_
         return items_
     def guess_filenames(self): #, items):
@@ -93,7 +63,7 @@ class downloader():
             print('   ', each['filename'])
             #print('   ', m)
         self.items_ = itemsout
-        print('items w filenames: ', self.items_)
+        #print('items w filenames: ', self.items_)
         return itemsout
     def check_saved(self):
         'checks which files are already saved'
@@ -105,7 +75,7 @@ class downloader():
             if saved:
                 print('file ', each['filename'], ' is saved')
             itemsout.append(each)
-        print('items check saved: ', itemsout)
+        #print('items check saved: ', itemsout)
         self.items_ = itemsout
     def create_toget(self, toget_list):
         self.toget_ = []
@@ -135,18 +105,6 @@ class downloader():
                 print('data saved: ' + self.toget_[id_to_save]['filename'])
                 self.done = self.done + 1
 
-def test1():
-    items_ = get_items()
-    toget = []
-    toget.append(items_[5])
-    toget.append(items_[6])
-    toget.append(items_[7])
-    toget.append(items_[8])
-    print(toget)
-
-    dl = downloader(toget)
-    dl.toget_ = dl.guess_filenames(items_)
-    #dl.getdata()
 def test2():
     dl2 = downloader('C:\\Users\\pkrssak\\AppData\\Roaming\\podcast_downloader\\data')
     dl2.get_items()
