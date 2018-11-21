@@ -26,12 +26,17 @@
         text_size: self.size
         halign: 'left'
         valign: 'middle'
+        id: title1
         padding: (dp(8), dp(6))
-        size_hint_x: 0.92
-    #CheckBox:
-    #    size_hint_x: 0.1
-        #active: root.act
-        #on_state: root.on_touch_down2() 
+        size_hint_x: 0.8 #0.92
+    Label:
+        text: root.duration
+        font_size: '9sp'
+        text_size: self.size
+        halign: 'right'
+        valign: 'middle'
+        padding: (dp(4), dp(6))
+        size_hint_x: 0.12
     RelativeLayout:
         size_hint_x: 0.08
         id: slabel
@@ -71,4 +76,40 @@
         orientation: 'vertical'
         multiselect: True
         touch_multiselect: True
-    
+<DescriptionWindow>:
+    orientation: 'vertical' 
+    size_hint_x: 0.75
+    size_hint_y: 0.9
+    pos_hint: {'top': 0.95, 'x':0.05}
+    BoxLayout:
+        orientation: 'horizontal'
+        size_hint_y: 0.1
+        Label:
+            text: 'Description'
+            size_hint_x: 0.8
+            canvas.before:
+                Color:
+                    rgba: (0.2, 0.2, 0.4, 1) 
+                Rectangle:
+                    pos: self.pos
+                    size: self.size  
+        Button:
+            text: 'Close'
+            size_hint_x: 0.2 
+            on_release: root.close_window() 
+    Label:
+        text: root.description
+        font_size: '12sp'
+        size_hint_y: 0.9
+        valign: 'top'
+        padding: (sp(10), sp(10))
+        text_size: self.size
+        id: description_label
+        canvas.before:
+            Color:
+                rgba: (0.2, 0.2, 0.25, 1) 
+            Rectangle:
+                pos: self.pos
+                size: self.size  
+#<MainRelative>:
+

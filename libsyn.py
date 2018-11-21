@@ -30,16 +30,20 @@ class downloader():
         url = 'http://angriesttrainer.libsyn.com/rss'
         result = session_requests.get(url)
         bs4_obj = BeautifulSoup(result.content, 'html.parser')
-        #print(bs4_obj.prettify())
+        print(bs4_obj.prettify())
         b = bs4_obj.find_all('item')
         items_ = []
         for i in b:
             try:
                 print('title: ', i.find('title'))
                 print('url: ', i.find('enclosure')['url'])
+                print('duration: ', i.find('itunes:duration').get_text())
+                #print('desc: ', i.find('description').get_text())
                 item_ = {
                     'title': i.find('title').get_text(),
-                    'url': i.find('enclosure')['url']
+                    'url': i.find('enclosure')['url'],
+                    'duration': i.find('itunes:duration').get_text(),
+                    'desc': i.find('description').get_text()
                 }
                 items_.append(item_)
             except:
@@ -108,8 +112,8 @@ class downloader():
 def test2():
     dl2 = downloader('C:\\Users\\pkrssak\\AppData\\Roaming\\podcast_downloader\\data')
     dl2.get_items()
-    dl2.guess_filenames()
-    dl2.check_saved()
+    #dl2.guess_filenames()
+    #dl2.check_saved()
     #lst = [1, 2, 4]
     #dl2.create_toget(lst)
     #dl2.getdata('C:\\Users\\pkrssak\\AppData\\Roaming\\podcast_downloader\\data')
