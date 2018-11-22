@@ -1,6 +1,7 @@
 #:kivy 1.10.0
 <MainV>:
     orientation: 'vertical'
+    name: ''
     BoxLayout:
         orientation: 'horizontal'
         size_hint_y: 0.05
@@ -12,9 +13,19 @@
             text: 'download'
             #size_hint_y: 0.07
             on_release: app.mainvidg.download() #app.rvidg.download()
+    Label:
+        text: root.name
+        size_hint_y: 0.03
+        canvas.before:
+            Color:
+                rgba: (0.2, 0.2, 0.2, 1)
+            Rectangle:
+                pos: self.pos
+                size: self.size
     Carousel:
         id: kv_carousel
-        size_hint_y: 0.95
+        size_hint_y: 0.92
+        on_index: root.name_update() #print('index changed')
 <Item1>:
     orientation: 'horizontal'
     size_hint_y: None

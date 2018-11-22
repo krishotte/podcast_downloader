@@ -25,7 +25,7 @@ with open(file_path, encoding='utf-8') as f: # Note the name of the .kv
 class RV(RecycleView):
     'recycle view class'
     snodes = []
-    def __init__(self, config_dir, config_file, downloader_class, **kwargs): 
+    def __init__(self, config_dir, name, config_file, downloader_class, **kwargs): 
         super().__init__() #super(RV, self).__init__(**kwargs)
         self.data = []
         self.config_dir = config_dir
@@ -91,11 +91,34 @@ class DescriptionWindow(BoxLayout):
         self.parent.remove_widget(self.parent.descwindow)
 class MainV(BoxLayout):
     'contains controls and carousel with RVs'
+    name = StringProperty()
     def __init__(self, config_dir):
         super().__init__()
-        self.rvidg = RV(config_dir, 'downloader.json', 1)
-        self.rvidg2 = RV(config_dir, 'downloader2.json', 2)
-        self.rvs = [self.rvidg, self.rvidg2]
+        inifile = ini2()
+        self.config = inifile.read(path.join(config_dir, 'config.json')) #'downloader.json'))
+        if not self.config:
+            print('missing config.json')
+            config = [
+                {
+                    'name': 'Vinnie Tortorich',
+                    'json': 'downloader.json',
+                    'downloader class': 1
+                },
+                {
+                    'name': 'podcast.__init__',
+                    'json': 'downloader2.json',
+                    'downloader class': 2
+                }
+            ]
+            print('configuration to write: ', config)
+            inifile.write(path.join(config_dir, 'config.json'), config)
+            raise Exception('---')
+        else:
+            self.rvs = []
+            for each in self.config:
+                rv = RV(config_dir, each['name'], each['json'], each['downloader class'])
+                self.rvs.append(rv)
+            self.name = self.config[0]['name']
     def refresh(self):
         'calls refresh function of active RV'
         print('active RV: ', self.ids.kv_carousel.index)
@@ -105,6 +128,9 @@ class MainV(BoxLayout):
         print('active RV: ', self.ids.kv_carousel.index)
         print('selected nodes for download: ', self.rvs[self.ids.kv_carousel.index].snodes)
         self.rvs[self.ids.kv_carousel.index].download()
+    def name_update(self):
+        'updates name label - podcast title'
+        self.name = self.config[self.ids.kv_carousel.index]['name']
 class MainRelative(RelativeLayout):
     'main relative layout window, contains MainV and DescriptionWindow'
     descwindow = DescriptionWindow()
