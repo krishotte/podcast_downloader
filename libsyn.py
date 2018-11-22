@@ -4,7 +4,7 @@ session_requests = requests.session()
 from requests_futures.sessions import FuturesSession
 import time
 import re
-from os import path
+from os import path, mkdir
 
 class downloader():
     'gets response in background, then saves data in foreground, wrapped in class'
@@ -15,6 +15,9 @@ class downloader():
         self.toget_ = []
         self.items_ = []
         self.data_dir = data_dir
+        if not path.isdir(self.data_dir):
+            mkdir(self.data_dir)
+            print('directory created: ', self.data_dir)
         '''
         for each in self.toget:
             each['id'] = i
@@ -25,12 +28,12 @@ class downloader():
             self.toget_.append(each)
         print('toget_ : ', self.toget_)
         '''
-    def get_items(self):
+    def get_items(self, url):
         'gets list of available podcast for download'
         url = 'http://angriesttrainer.libsyn.com/rss'
         result = session_requests.get(url)
         bs4_obj = BeautifulSoup(result.content, 'html.parser')
-        print(bs4_obj.prettify())
+        #print(bs4_obj.prettify())
         b = bs4_obj.find_all('item')
         items_ = []
         for i in b:
@@ -91,7 +94,9 @@ class downloader():
             item['sess'] = se
             idx = idx + 1
             self.toget_.append(item)
-        print('toget items: ', self.toget_)
+        print('toget items: ') #, self.toget_)
+        for each in self.toget_:
+            print('   ', each['url'])
     def bg_cg(self, sess, resp):
         'background_callback function - called when data is complete'
         print('id: ', sess.index)
@@ -100,6 +105,7 @@ class downloader():
     def getdata(self, datadir):
         'gets and saves data'
         self.requests = []
+        self.done = 0
         for each in self.toget_:
             self.requests.append(each['sess'].get(each['url'], background_callback=self.bg_cg))
         while self.done < len(self.toget_):
@@ -108,6 +114,51 @@ class downloader():
                 open(path.join(datadir, self.toget_[id_to_save]['filename'] + '.mp3'), 'wb').write(self.requests[id_to_save].result().content)
                 print('data saved: ' + self.toget_[id_to_save]['filename'])
                 self.done = self.done + 1
+class downloader2(downloader):
+    def get_items(self, url):
+        print('url: ', url)
+        result = session_requests.get(url)
+        bs4_obj = BeautifulSoup(result.content, 'html.parser')
+        #print(bs4_obj.prettify())
+        b = bs4_obj.find_all('item')
+        items_ = []
+        for i in b:
+            try:
+                print('title: ', i.find('title'))
+                print('url: ', i.find('enclosure')['url'])
+                print('length: ', i.find('enclosure')['length'])
+                #print('desc: ', i.find('description').get_text())
+                item_ = {
+                    'title': i.find('title').get_text(),
+                    'url': i.find('enclosure')['url'],
+                    'length': i.find('enclosure')['length'],
+                    'duration': i.find('itunes:duration').get_text(),
+                    'desc': i.find('description').get_text()
+                }
+                items_.append(item_)
+            except:
+                pass
+        print('items lenght: ', len(items_))
+        #print('items: ', items_)
+        self.items_ = items_
+        return items_
+    def guess_filenames(self):
+        'creates filenames from urls or titles'
+        p = re.compile('Episode.[0-9]{1,3}[^\.]{1,32}')
+        print('filenames: ')
+        itemsout = []
+        for each in self.items_:
+            m = p.search(each['url'])
+            try:
+                each['filename'] = m.group()
+            except(AttributeError):
+                each['filename'] = each['title']
+            itemsout.append(each)
+            print('   ', each['filename'])
+            #print('   ', m)
+        self.items_ = itemsout
+        #print('items w filenames: ', self.items_)
+        return itemsout
 
 def test2():
     dl2 = downloader('C:\\Users\\pkrssak\\AppData\\Roaming\\podcast_downloader\\data')
@@ -117,8 +168,16 @@ def test2():
     #lst = [1, 2, 4]
     #dl2.create_toget(lst)
     #dl2.getdata('C:\\Users\\pkrssak\\AppData\\Roaming\\podcast_downloader\\data')
+def test3():
+    dl3 = downloader2('C:\\Users\\pkrssak\\AppData\\Roaming\\podcast_downloader\\data2')
+    dl3.get_items('https://www.podcastinit.com/feed/mp3/')
+    dl3.guess_filenames()
+    dl3.check_saved()
+    lst = [1, 2, 3, 4, 5]
+    dl3.create_toget(lst)
+    dl3.getdata('C:\\Users\\pkrssak\\AppData\\Roaming\\podcast_downloader\\data2')
 
-#test1()
+#test3()
 #test2()
 #print('...done...')
 

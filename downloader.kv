@@ -7,12 +7,14 @@
         Button:
             text: 'refresh'
             #size_hint_y: 0.07
-            on_release: app.rvidg.refresh()
+            on_release: app.mainvidg.refresh() #app.rvidg.refresh()
         Button:
             text: 'download'
             #size_hint_y: 0.07
-            on_release: app.rvidg.download()
-    #Item1:
+            on_release: app.mainvidg.download() #app.rvidg.download()
+    Carousel:
+        id: kv_carousel
+        size_hint_y: 0.95
 <Item1>:
     orientation: 'horizontal'
     size_hint_y: None
@@ -64,11 +66,9 @@
                     size: self.size
 #<MyRecycleBoxLayout>:
 <RV>:
-    size_hint_y: 0.83
-    viewclass: 'Item1' #'Label'
-    #RecycleBoxLayout:
+    #size_hint_y: 0.95 #0.83
+    viewclass: 'Item1' 
     MyRecycleBoxLayout:
-        size_hint_y: 0.86
         default_size: None, dp(48)
         default_size_hint: 1, None
         size_hint_y: None

@@ -25,22 +25,26 @@ with open(file_path, encoding='utf-8') as f: # Note the name of the .kv
 class RV(RecycleView):
     'recycle view class'
     snodes = []
-    def __init__(self, data_dir, **kwargs):
+    def __init__(self, config_dir, config_file, downloader_class, **kwargs): 
         super().__init__() #super(RV, self).__init__(**kwargs)
         self.data = []
-        self.data_dir = data_dir
-        print('datadir: ', self.data_dir)
+        self.config_dir = config_dir
+        print('configdir: ', self.config_dir)
         inifile = ini2()
-        self.config = inifile.read(path.join(self.data_dir, 'downloader.json'))
+        self.config = inifile.read(path.join(self.config_dir, config_file)) #'downloader.json'))
         if not self.config:
             print('dictionary is empty')
-            self.config['datadir'] = path.join(self.data_dir, 'data')
-            inifile.write(path.join(self.data_dir, 'downloader.json'), self.config)
+            self.config['datadir'] = path.join(self.config_dir, 'data')
+            inifile.write(path.join(self.config_dir, config_file), self.config)
         #print(dict1)
         print('directory exists: ', path.isdir(self.config['datadir']))
         if not path.isdir(self.config['datadir']):
             mkdir(self.config['datadir'])
             print('directory created')
+        if downloader_class == 1:
+            self.dl2 = libsyn.downloader(self.config['datadir'])
+        else:
+            self.dl2 = libsyn.downloader2(self.config['datadir'])
         self.refresh()
     def download(self):
         'downloads selected podcast files'
@@ -52,8 +56,7 @@ class RV(RecycleView):
         'refreshes podcast list and view, clears selection'
         self.snodes = []
         self.children[0].selected_nodes = []
-        self.dl2 = libsyn.downloader(self.config['datadir'])
-        self.dl2.get_items()
+        self.dl2.get_items(self.config['url'])
         self.dl2.guess_filenames()
         self.dl2.check_saved()
         items = self.dl2.items_ #libsyn.get_items()
@@ -62,24 +65,24 @@ class RV(RecycleView):
             a = {}
             a['text'] = items[i]['title']
             a['idx'] = str(i)
-            a['saved'] = items[i]['saved'] #True if i%2 == 0 else False
-            a['selectable'] = items[i]['selectable'] #False if i%2 == 0 else True
+            a['saved'] = items[i]['saved'] 
+            a['selectable'] = items[i]['selectable'] 
             a['selected'] = False
             a['duration'] = items[i]['duration']
             a['desc'] = items[i]['desc']
             items_.append(a)
         self.data = items_
-        for each in self.data:
-            print('self.data: ', each)
+        #for each in self.data:
+        #    print('self.data: ', each)
         self.refresh_from_data()        #need to be called to properly refresh view and clear selections
     def display_description(self, index):
         'displays description window'
         print('description displayed: ', index)
-        self.parent.parent.descwindow.description = self.data[index]['desc']
+        self.parent.parent.parent.parent.descwindow.description = self.data[index]['desc']
         try:
-            self.parent.parent.add_widget(self.parent.parent.descwindow)
+            self.parent.parent.parent.parent.add_widget(self.parent.parent.parent.parent.descwindow)
         except:
-            pass  
+            pass
 class DescriptionWindow(BoxLayout):
     'description window class'
     description = StringProperty()
@@ -87,8 +90,21 @@ class DescriptionWindow(BoxLayout):
         'closes description window'
         self.parent.remove_widget(self.parent.descwindow)
 class MainV(BoxLayout):
-    'contains controls and RV'
-    pass
+    'contains controls and carousel with RVs'
+    def __init__(self, config_dir):
+        super().__init__()
+        self.rvidg = RV(config_dir, 'downloader.json', 1)
+        self.rvidg2 = RV(config_dir, 'downloader2.json', 2)
+        self.rvs = [self.rvidg, self.rvidg2]
+    def refresh(self):
+        'calls refresh function of active RV'
+        print('active RV: ', self.ids.kv_carousel.index)
+        self.rvs[self.ids.kv_carousel.index].refresh()
+    def download(self):
+        'calls download function of active RV'
+        print('active RV: ', self.ids.kv_carousel.index)
+        print('selected nodes for download: ', self.rvs[self.ids.kv_carousel.index].snodes)
+        self.rvs[self.ids.kv_carousel.index].download()
 class MainRelative(RelativeLayout):
     'main relative layout window, contains MainV and DescriptionWindow'
     descwindow = DescriptionWindow()
@@ -97,7 +113,7 @@ class Item1(RecycleDataViewBehavior, BoxLayout):
     text = StringProperty()
     act = BooleanProperty()
     idx = NumericProperty()
-    index = idx #None
+    index = idx
     selected = BooleanProperty(False)
     selectable = BooleanProperty(True)
     saved = BooleanProperty(False)
@@ -133,10 +149,9 @@ class Podcast_Downloader(App):
         print('--------------')
         print('user datadir: ', self.user_data_dir)
         self.mainrel = MainRelative()
-        self.mainvidg = MainV()
-        self.descwindow = DescriptionWindow()
-        self.rvidg = RV(self.user_data_dir)
-        self.mainvidg.add_widget(self.rvidg)
+        self.mainvidg = MainV(self.user_data_dir)
+        for each in self.mainvidg.rvs:
+            self.mainvidg.ids.kv_carousel.add_widget(each)
         self.mainrel.add_widget(self.mainvidg)
         Window.size = (400, 800)
         return self.mainrel 
