@@ -171,11 +171,33 @@ class MyRecycleBoxLayout(FocusBehavior, LayoutSelectionBehavior, RecycleBoxLayou
         return super().apply_selection(index, view, is_selected)
 
 class Podcast_Downloader(App):
+    def get_data_dir(self):
+        'Gets suitable datadir - android patch'
+        try:
+            self.my_data_dir = self.user_data_dir
+            print('user datadir: ', self.my_data_dir)
+            if not path.exists(self.my_data_dir):
+                print('creating dir: ', self.my_data_dir)
+                mkdir(self.my_data_dir)
+            else:
+                pass
+        except:
+            print('user datadir cannot be created. trying /storage/emulated/0')
+            data_dir = path.join('/storage/emulated/0', self.name)
+            if not path.exists(data_dir):
+                print('creating dir: ', data_dir)
+                try:
+                    mkdir(data_dir)
+                except:
+                    pass
+            self.my_data_dir = data_dir
+        print('using user datadir: ', self.my_data_dir)
     def build(self):
         print('--------------')
-        print('user datadir: ', self.user_data_dir)
+        #print('user datadir: ', self.user_data_dir)
+        self.get_data_dir()
         self.mainrel = MainRelative()
-        self.mainvidg = MainV(self.user_data_dir)
+        self.mainvidg = MainV(self.my_data_dir)
         for each in self.mainvidg.rvs:
             self.mainvidg.ids.kv_carousel.add_widget(each)
         self.mainrel.add_widget(self.mainvidg)
