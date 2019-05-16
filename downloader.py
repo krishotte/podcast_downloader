@@ -29,12 +29,12 @@ class RV(RecycleView):
     snodes = []
 
     def __init__(self, config_dir, name, config_file, downloader_class, **kwargs):
-        super().__init__() #super(RV, self).__init__(**kwargs)
+        super().__init__()
         self.data = []
         self.config_dir = config_dir
         print('configdir: ', self.config_dir)
         inifile = ini2()
-        self.config = inifile.read(path.join(self.config_dir, config_file)) #'downloader.json'))
+        self.config = inifile.read(path.join(self.config_dir, config_file))
         if not self.config:
             print('dictionary is empty')
             self.config['datadir'] = path.join(self.config_dir, 'data')
@@ -48,7 +48,10 @@ class RV(RecycleView):
             self.dl2 = libsyn.Downloader(self.config['datadir'], chunk=2000000)
         else:
             self.dl2 = libsyn.Downloader3(self.config['datadir'], chunk=2000000)
-        self.refresh()
+
+        # locks gui while refreshing
+        # self.refresh()
+        Clock.schedule_once(self.refresh, 2)
 
     def download(self):
         """
@@ -63,8 +66,6 @@ class RV(RecycleView):
         self.refresh()
         self.dl2.start_download()
         self.download_event = Clock.schedule_once(self.check_download_status, 0.1)
-
-        # self.refresh()
 
         for node in self.nodes_to_download:
             self.data[node]['download_progress'] = '0'
@@ -92,7 +93,7 @@ class RV(RecycleView):
             self.download_event = Clock.schedule_once(self.check_download_status, 0.05)
             self.refresh_from_data()
 
-    def refresh(self):
+    def refresh(self, *args):
         'refreshes podcast list and view, clears selection'
         self.snodes = []
         self.children[0].selected_nodes = []
@@ -143,10 +144,12 @@ class MainV(BoxLayout):
     def __init__(self, config_dir):
         super().__init__()
         inifile = ini2()
-        self.config = inifile.read(path.join(config_dir, 'config.json')) #'downloader.json'))
-        if not self.config:
-            print('missing config.json')
-            config = [
+
+        default_config = {
+            'config': {
+                'chunk_size': 1000000
+            },
+            'downloaders': [
                 {
                     'name': 'Vinnie Tortorich',
                     'json': 'downloader.json',
@@ -158,15 +161,21 @@ class MainV(BoxLayout):
                     'downloader class': 2
                 }
             ]
-            print('configuration to write: ', config)
-            inifile.write(path.join(config_dir, 'config.json'), config)
-            raise Exception('---')
-        else:
-            self.rvs = []
-            for each in self.config:
-                rv = RV(config_dir, each['name'], each['json'], each['downloader class'])
-                self.rvs.append(rv)
-            self.name = self.config[0]['name']
+        }
+
+        loaded_config = inifile.read(path.join(config_dir, 'config.json')) #'downloader.json'))
+        if not loaded_config:
+            print('missing config.json')
+            print(' writing default config: ', default_config)
+            inifile.write(path.join(config_dir, 'config.json'), default_config)
+            # raise Exception('---')
+
+        self.config = {**default_config, **loaded_config}
+        self.rvs = []
+        for each in self.config['downloaders']:
+            rv = RV(config_dir, each['name'], each['json'], each['downloader class'])
+            self.rvs.append(rv)
+        self.name = self.config['downloaders'][0]['name']
 
     def refresh(self):
         'calls refresh function of active RV'
@@ -181,7 +190,7 @@ class MainV(BoxLayout):
 
     def name_update(self):
         'updates name label - podcast title'
-        self.name = self.config[self.ids.kv_carousel.index]['name']
+        self.name = self.config['downloaders'][self.ids.kv_carousel.index]['name']
 
 
 class MainRelative(RelativeLayout):

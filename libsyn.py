@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 from requests_futures.sessions import FuturesSession
 import re
 from os import path, mkdir
+import time
 
 session_requests = requests.session()
 
@@ -370,6 +371,7 @@ class Downloader3(Downloader2):
 
 def test2():
     dl2 = Downloader('C:\\Users\\pkrssak\\AppData\\Roaming\\podcast_downloader\\data')
+    time.sleep(5)
     dl2.get_items('http://angriesttrainer.libsyn.com/rss')
     dl2.guess_filenames()
     dl2.check_saved()
