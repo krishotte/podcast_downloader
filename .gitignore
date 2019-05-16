@@ -1,4 +1,6 @@
 #ignore all txt files
 *.txt
+*.mp3
 __pycache__/
 .idea/
+venv/

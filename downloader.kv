@@ -75,6 +75,20 @@
                 Rectangle:
                     pos: self.pos
                     size: self.size
+        Label:
+            id: download_progress_
+            text: root.download_progress
+            size_hint_y: None
+            size: (self.texture_size[0]+4, self.texture_size[1]+2)
+            pos_hint_y: 0.1
+            font_size: '9sp'
+            color: (0, 0, 0, 1)
+            canvas.before:
+                Color:
+                    rgba: (0.87, 0.68, 0.16, 1) if self.text is not '' else (0, 0, 0, 0)
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
 #<MyRecycleBoxLayout>:
 <RV>:
     #size_hint_y: 0.95 #0.83

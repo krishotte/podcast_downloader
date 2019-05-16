@@ -11,13 +11,14 @@ class Downloader:
     """
     gets response in background, then saves data in foreground, wrapped in class
     """
-    def __init__(self, data_dir):  # , toget):
+    def __init__(self, data_dir, chunk=1000000):  # , toget):
         self.done = 0
         self.results_queue = []
         i = 0
         self.toget_ = []
         self.items_ = []
         self.data_dir = data_dir
+        self.chunk = chunk
         if not path.isdir(self.data_dir):
             mkdir(self.data_dir)
             print('directory created: ', self.data_dir)
@@ -31,6 +32,7 @@ class Downloader:
             self.toget_.append(each)
         print('toget_ : ', self.toget_)
         '''
+        self.done_list = []
 
     def get_items(self, url):
         """
@@ -50,11 +52,13 @@ class Downloader:
                 print('url: ', i.find('enclosure')['url'])
                 print('duration: ', i.find('itunes:duration').get_text())
                 # print('desc: ', i.find('description').get_text())
+                print('length: ', i.find('enclosure')['length'])
                 item_ = {
                     'title': i.find('title').get_text(),
                     'url': i.find('enclosure')['url'],
                     'duration': i.find('itunes:duration').get_text(),
-                    'desc': i.find('description').get_text()
+                    'desc': i.find('description').get_text(),
+                    'length': i.find('enclosure')['length'],
                 }
                 items_.append(item_)
             except:
@@ -127,6 +131,129 @@ class Downloader:
                 open(path.join(datadir, self.toget_[id_to_save]['filename']), 'wb').write(self.requests[id_to_save].result().content)
                 print('data saved: ' + self.toget_[id_to_save]['filename'])
                 self.done = self.done + 1
+
+    def start_download(self):
+        """
+        starts download, then periodically call self.get_data_chunk()
+        to get actual progress and data saved
+        need to call self.create_toget first
+        :param datadir: where to save data
+        :return: TODO: done_list? or progresses
+        """
+        self.sessions = []
+        self.requests = []
+        self.done_list = []
+        self.files = []
+        self.lengths = []
+        self.download_iteration = 0
+        self.progresses = []
+
+        # creates streaming requests
+        # opens file for each session
+        for each in self.toget_:
+            sessn_ = requests.session()
+            self.sessions.append(sessn_)
+            self.requests.append(sessn_.get(each['url'], stream=True))
+            self.done_list.append(False)
+            self.files.append(open(path.join(self.data_dir, each['filename']), 'wb'))  # (open(f'aa{j}.mp3', 'wb'))
+            try:
+                self.lengths.append(int(each['length']))
+            except KeyError:
+                self.lengths.append(0)
+            except:
+                raise
+            self.progresses.append(0)
+
+        return self.done_list
+
+    def get_data_chunk(self):
+        """
+        executes one download iteration
+        saves data
+        :return: progresses
+        """
+
+        j = 0
+        for each in self.requests:
+            try:
+                print(' downloading, session: ', j)
+                data = next(each.iter_content(chunk_size=self.chunk))
+                try:
+                    progress = round((self.download_iteration * self.chunk + len(data)) * 100 / self.lengths[j])
+                except ZeroDivisionError:
+                    progress = -1
+                print('   % done: ', progress)
+                self.files[j].write(data)
+                self.progresses[j] = progress
+            except (StopIteration, requests.exceptions.StreamConsumedError):
+                print(j, ' session download done')
+                self.done_list[j] = True
+            j += 1
+        self.download_iteration += 1
+        return self.progresses
+
+    def check_done(self):
+        """
+        :return: all downloads are done
+        """
+        if sum(self.done_list) < len(self.done_list):
+            return False
+        else:
+            return True
+
+    def cleanup(self):
+        """
+        TODO_: closes opened files
+        TODO: closes opened sessions
+        :return:
+        """
+        for file in self.files:
+            file.close()
+
+    def get_data_chunks(self, datadir):
+        """
+        gets data in chunks provides download status
+        :param datadir: where to save data
+        :return:
+        """
+        self.sessions = []
+        self.requests = []
+        self.done = []
+        self.files = []
+        self.lengths = []
+
+        for each in self.toget_:
+            sessn_ = requests.session()
+            self.sessions.append(sessn_)
+            self.requests.append(sessn_.get(each['url'], stream=True))
+            self.done.append(False)
+            self.files.append(open(path.join(datadir, each['filename']), 'wb'))  # (open(f'aa{j}.mp3', 'wb'))
+            try:
+                self.lengths.append(int(each['length']))
+            except KeyError:
+                self.lengths.append(0)
+            except:
+                raise
+
+        i = 0
+
+        while sum(self.done) < len(self.done):
+            print(' iteration: ', i)
+            j = 0
+            for each in self.requests:
+                try:
+                    data = next(each.iter_content(chunk_size=10000000))
+                    print(' downloading, session: ', j, ' % done: ',
+                          round((i * 10000000 + len(data)) * 100 / self.lengths[j], 1))
+                    self.files[j].write(data)
+                except (StopIteration, requests.exceptions.StreamConsumedError):
+                    print(j, ' session download done')
+                    self.done[j] = True
+                j += 1
+            i += 1
+
+        for file in self.files:
+            file.close()
 
 
 class Downloader2(Downloader):
@@ -269,14 +396,33 @@ def test_downloader3():
     dl.get_items(url1)
     dl.guess_filenames()
     dl.check_saved()
-    # lst = [1, 2, 3]
-    # dl.create_toget(lst)
-    # dl.getdata('C:\\Users\\pkrssak\\AppData\\Roaming\\podcast_downloader\\data3')
+    lst = [1, 2, 3]
+    dl.create_toget(lst)
+    dl.getdata('C:\\Users\\pkrssak\\AppData\\Roaming\\podcast_downloader\\data3')
+
+
+def test_iterative_download():
+    url1 = 'https://talkpython.fm/episodes/rss'
+    url2 = 'https://www.podcastinit.com/feed/mp3/'
+    url3 = 'http://angriesttrainer.libsyn.com/rss'
+    dl = Downloader3('C:\\Users\\pkrssak\\AppData\\Roaming\\podcast_downloader\\test')
+    dl.get_items(url1)
+    dl.guess_filenames()
+    dl.check_saved()
+    lst = [1, 2, 3]
+    dl.create_toget(lst)
+    dl.start_download()
+    # print(' done: ', dl.check_done())
+    while dl.check_done() is False:
+        progress = dl.get_data_chunk()
+        print('progress: ', progress)
+    dl.cleanup()
 
 
 if __name__ == '__main__':
     # test3()
-    # test2()
-    test_downloader3()
+    test2()
+    # test_downloader3()
+    # test_iterative_download()
     print('...done...')
     # input()

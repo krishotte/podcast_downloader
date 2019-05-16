@@ -15,6 +15,7 @@ import libsyn
 from m_file import ini2
 from kivy.core.window import Window
 from kivy.uix.relativelayout import RelativeLayout
+from kivy.clock import Clock
 
 dir_path = path.dirname(path.realpath(__file__))
 file_path = path.join(dir_path, 'downloader.kv')
@@ -44,17 +45,52 @@ class RV(RecycleView):
             mkdir(self.config['datadir'])
             print('directory created')
         if downloader_class == 1:
-            self.dl2 = libsyn.Downloader(self.config['datadir'])
+            self.dl2 = libsyn.Downloader(self.config['datadir'], chunk=2000000)
         else:
-            self.dl2 = libsyn.Downloader3(self.config['datadir'])
+            self.dl2 = libsyn.Downloader3(self.config['datadir'], chunk=2000000)
         self.refresh()
 
     def download(self):
-        'downloads selected podcast files'
+        """
+        downloads selected podcast files
+        """
         print('RV selected nodes: ', self.snodes)
         self.dl2.create_toget(self.snodes)
-        self.dl2.getdata(self.config['datadir'])
+        self.nodes_to_download = self.snodes
+        # self.dl2.getdata(self.config['datadir'])
+        # self.dl2.get_data_chunks(self.config['datadir'])
+
         self.refresh()
+        self.dl2.start_download()
+        self.download_event = Clock.schedule_once(self.check_download_status, 0.1)
+
+        # self.refresh()
+
+        for node in self.nodes_to_download:
+            self.data[node]['download_progress'] = '0'
+
+    def check_download_status(self, *args):
+        """
+        checks if download is in progress
+        schedules itself again if download is not finished
+        :return:
+        """
+        if self.dl2.check_done() is False:
+            self.download_progress = self.dl2.get_data_chunk()
+            print(' download progress: ', self.download_progress)
+
+            # update displayed download progresses
+            i = 0
+            for node in self.nodes_to_download:
+                self.data[node]['download_progress'] = str(self.download_progress[i])
+                i += 1
+
+            if self.dl2.check_done() is True:
+                self.dl2.cleanup()
+                self.nodes_to_download = []
+                self.refresh()
+            self.download_event = Clock.schedule_once(self.check_download_status, 0.05)
+            self.refresh_from_data()
 
     def refresh(self):
         'refreshes podcast list and view, clears selection'
@@ -74,6 +110,7 @@ class RV(RecycleView):
             a['selected'] = False
             a['duration'] = items[i]['duration']
             a['desc'] = items[i]['desc']
+            a['download_progress'] = ''
             items_.append(a)
         self.data = items_
         #for each in self.data:
@@ -162,6 +199,7 @@ class Item1(RecycleDataViewBehavior, BoxLayout):
     selectable = BooleanProperty(True)
     saved = BooleanProperty(False)
     duration = StringProperty()
+    download_progress = StringProperty()
 
     def refresh_view_attrs(self, rv, index, data):
         ''' Catch and handle the view changes '''
