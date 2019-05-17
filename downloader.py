@@ -297,7 +297,8 @@ class Podcast_Downloader(App):
         self.mainrel.add_widget(self.mainvidg)
         """
 
-        Window.size = (400, 800)
+        if platform != 'android':
+            Window.size = (400, 800)
         return self.mainrel 
 
 
