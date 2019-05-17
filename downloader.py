@@ -16,6 +16,7 @@ from m_file import ini2
 from kivy.core.window import Window
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.clock import Clock
+from kivy.utils import platform
 
 dir_path = path.dirname(path.realpath(__file__))
 file_path = path.join(dir_path, 'downloader.kv')
@@ -242,6 +243,26 @@ class MyRecycleBoxLayout(FocusBehavior, LayoutSelectionBehavior, RecycleBoxLayou
 
 
 class Podcast_Downloader(App):
+    def __init__(self):
+        super().__init__()
+        # overrides default kivy 1.10.1 user_data_dir creation strategy
+        # which creates data_dir in /data folder
+        if platform == 'android':
+            data_dir = path.join('/sdcard', self.name)
+        else:
+            data_dir = self.user_data_dir
+        if not path.exists(data_dir):
+            print('creating dir: ', data_dir)
+            mkdir(data_dir)
+        print('using data_dir: ', data_dir)
+        self.data_dir = data_dir
+
+        self.mainrel = MainRelative()
+        self.mainvidg = MainV(self.data_dir)
+        for each in self.mainvidg.rvs:
+            self.mainvidg.ids.kv_carousel.add_widget(each)
+        self.mainrel.add_widget(self.mainvidg)
+
     def get_data_dir(self):
         'Gets suitable datadir - android patch'
         try:
@@ -266,6 +287,7 @@ class Podcast_Downloader(App):
 
     def build(self):
         print('--------------')
+        """
         # print('user datadir: ', self.user_data_dir)
         self.get_data_dir()
         self.mainrel = MainRelative()
@@ -273,6 +295,8 @@ class Podcast_Downloader(App):
         for each in self.mainvidg.rvs:
             self.mainvidg.ids.kv_carousel.add_widget(each)
         self.mainrel.add_widget(self.mainvidg)
+        """
+
         Window.size = (400, 800)
         return self.mainrel 
 
